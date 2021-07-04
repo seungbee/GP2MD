@@ -1,0 +1,147 @@
+src/<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GP2MIDI</title>
+    <script src="https://cdn.jsdelivr.net/npm/webmidi"></script>
+
+</head>
+<body>
+    <h1>Wa! Gamepad to MIDI Controller!  (nintendo switch pro con + MAC only)</h1>
+    <h3>pressed button:</h3>
+    <h1 id="display">none</h1>
+    <h3 id="output_display">none</h2>
+    <input type="text" id="key" size="3">
+    <button onclick="onbutton()">mapping</button>
+    <canvas width="512" height="512" id="canvas"></canvas>
+
+
+    <script>
+
+        const canvas = document.getElementById("canvas")
+        let ctx
+
+        if (!canvas.getContext) { canvas.remove() }
+
+        const gamepad_base = new Image()
+        const gamepad_A = new Image()
+        const gamepad_X = new Image()
+        const gamepad_B = new Image()
+        const gamepad_Y = new Image()
+        const gamepad_up = new Image()
+        const gamepad_down = new Image()
+        const gamepad_left = new Image()
+        const gamepad_right = new Image()
+        const gamepad_L = new Image()
+        const gamepad_ZL = new Image()
+        const gamepad_R = new Image()
+        const gamepad_ZR = new Image()
+        const gamepad_stick1 = new Image()
+        const gamepad_stick2 = new Image()
+
+        gamepad_base.src = 'src/gamepad_base.png'
+        gamepad_A.src = 'src/gamepad_A.png'
+        gamepad_B.src = 'src/gamepad_B.png'
+        gamepad_X.src = 'src/gamepad_X.png'
+        gamepad_Y.src = 'src/gamepad_Y.png'
+        gamepad_down.src = 'src/gamepad_down.png'
+        gamepad_left.src = 'src/gamepad_left.png'
+        gamepad_right.src = 'src/gamepad_right.png'
+        gamepad_up.src = 'src/gamepad_up.png'
+        gamepad_L.src = 'src/gamepad_L.png'
+        gamepad_ZL.src = 'src/gamepad_ZL.png'
+        gamepad_R.src = 'src/gamepad_R.png'
+        gamepad_ZR.src = 'src/gamepad_ZR.png'
+        gamepad_stick1.src = 'src/gamepad_stick1.png'
+        gamepad_stick2.src = 'src/gamepad_stick2.png'
+
+        display = document.getElementById('display')
+        output_display = document.getElementById('output_display')
+
+        WebMidi.enable(function(err) {
+            if (err) {
+                console.log('sadfasdf', err)
+
+            }
+            console.log(WebMidi.outputs)
+
+            WebMidi.outputs.forEach(function(output) {
+                if (output.name == 'IAC 드라이버 버스 1')
+                    window.output = output         
+            });
+
+            updateGamepad()
+            
+        }, true)
+
+
+        
+        let cool = []
+        let mappings = []
+
+        for (let i=0; i<16; i++) {
+            cool.push(false)
+            mappings.push('')
+        }
+        
+        function updateGamepad() {
+            requestAnimationFrame(updateGamepad)
+
+            ctx = canvas.getContext('2d')
+            ctx.imageSmoothingEnabled = false
+
+            ctx.drawImage(gamepad_base, 0, 0, 512, 512)
+
+            const gamepad = navigator.getGamepads()[0]
+            if (!gamepad) return
+            
+            ctx.drawImage(gamepad_stick1, gamepad.axes[0]*10, gamepad.axes[1]*10, 512, 512)
+            ctx.drawImage(gamepad_stick2, gamepad.axes[2]*10, gamepad.axes[3]*10, 512, 512)
+
+            output.sendPitchBend(gamepad.axes[1]*-1, 1)
+            for (let i=0; i<cool.length; i++) {
+                if (gamepad.buttons[i]['value'] === 1) {
+
+                    if (i === 0) ctx.drawImage(gamepad_A, 0, 0, 512, 512)
+                    if (i === 1) ctx.drawImage(gamepad_B, 0, 0, 512, 512)
+                    if (i === 2) ctx.drawImage(gamepad_X, 0, 0, 512, 512)
+                    if (i === 3) ctx.drawImage(gamepad_Y, 0, 0, 512, 512)
+
+                    if (i === 4) ctx.drawImage(gamepad_L, 0, 0, 512, 512)
+                    if (i === 5) ctx.drawImage(gamepad_R, 0, 0, 512, 512)
+                    if (i === 6) ctx.drawImage(gamepad_ZL, 0, 0, 512, 512)
+                    if (i === 7) ctx.drawImage(gamepad_ZR, 0, 0, 512, 512)
+
+                    if (i === 12) ctx.drawImage(gamepad_up, 0, 0, 512, 512)
+                    if (i === 13) ctx.drawImage(gamepad_down, 0, 0, 512, 512)
+                    if (i === 14) ctx.drawImage(gamepad_left, 0, 0, 512, 512)
+                    if (i === 15) ctx.drawImage(gamepad_right, 0, 0, 512, 512)
+                    
+                    if (!cool[i]) {
+
+                        display.innerHTML = i
+                        if (mappings[i] === '') output_display.innerHTML = 'none'
+                       else output_display.innerHTML = mappings[i]
+
+                        //console.log("sadf")
+                        if (mappings[i] !== '') {
+                            output.playNote(mappings[i], 1, {duration: 100, velocity: 1})
+                        }
+                        cool[i] = true
+                    }
+                }
+                if (gamepad.buttons[i]['value'] === 0 && cool[i]) {
+                    cool[i] = false
+                }
+            }
+        }
+
+        function onbutton() {
+            mappings[Number(display.innerHTML)] = document.getElementById('key').value
+        }
+        
+    </script>
+</body>
+</html>
